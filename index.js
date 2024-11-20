@@ -9,6 +9,16 @@ app.use(bodyParser.json());
 // POST /api/transactions/ - Create a new transaction
 app.post("/api/transactions/", async (req, res) => {
   const { amount, transaction_type, user } = req.body;
+
+  // Validation
+  if (!amount || !transaction_type || !user) {
+    return res
+      .status(400)
+      .json({
+        error: "All fields (amount, transaction_type, user) are required",
+      });
+  }
+
   try {
     const transaction = await Transaction.create({
       amount,
@@ -70,6 +80,12 @@ app.get("/api/transactions/", async (req, res) => {
 // PUT /api/transactions/:id/ - Update status of a transaction
 app.put("/api/transactions/:id/", async (req, res) => {
   const { status } = req.body;
+
+  // Validation
+  if (!status) {
+    return res.status(400).json({ error: "Status field is required" });
+  }
+
   try {
     const transaction = await Transaction.findByPk(req.params.id);
     if (!transaction) {
@@ -127,7 +143,11 @@ app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
 
-// Sync models to the database
-sequelize.sync().then(() => {
-  console.log("Database synced");
-});
+// Sync models to the database only in development (for production, use migrations)
+if (process.env.NODE_ENV === "development") {
+  sequelize.sync().then(() => {
+    console.log("Database synced");
+  });
+} else {
+  console.log("Skipping DB sync in production. Use migrations.");
+}
